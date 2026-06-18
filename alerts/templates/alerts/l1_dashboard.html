@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord L1 - SOAR Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6610f2;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+            --dark-bg: #f8f9fa;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0bb5e0 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .stats-card.new { border-left-color: var(--info-color); }
+        .stats-card.in-progress { border-left-color: var(--warning-color); }
+        .stats-card.resolved { border-left-color: var(--success-color); }
+        .stats-card.escalated { border-left-color: var(--danger-color); }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 30px 0 20px 0;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-section h5 {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .table-responsive {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background-color: var(--dark-bg);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table thead th {
+            font-weight: 600;
+            color: #212529;
+            padding: 15px;
+            vertical-align: middle;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-status.new { background-color: #cfe2ff; color: #084298; }
+        .badge-status.in-progress { background-color: #fff3cd; color: #664d03; }
+        .badge-status.resolved { background-color: #d1e7dd; color: #0f5132; }
+        .badge-status.escalated { background-color: #f8d7da; color: #842029; }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .btn-resolve {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-resolve:hover {
+            background-color: #157347;
+            transform: scale(1.05);
+        }
+
+        .btn-escalate {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-escalate:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        .btn-take {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        .btn-take:hover {
+            background-color: #0bb5e0;
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .playbook-result {
+            background-color: #f0f7ff;
+            border-left: 3px solid var(--info-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #084298;
+        }
+
+        .btn-create-playbook {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-create-playbook:hover {
+            background-color: #0a58ca;
+            transform: scale(1.05);
+        }
+
+        /* Loader pour les boutons */
+        .btn-action.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-action.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-top: -8px;
+            margin-left: -8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Message de succès temporaire */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .alert-detail-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .alert-detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--primary-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        .timeline-date {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .timeline-event {
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .table {
+                font-size: 0.9rem;
+            }
+
+            .btn-action {
+                padding: 5px 8px;
+                font-size: 0.75rem;
+            }
+
+            .table thead th,
+            .table tbody td {
+                padding: 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .clickable-row {
+            cursor: pointer;
+        }
+        
+        .escalation-reason-box {
+            background-color: #fff3cd;
+            border-left: 3px solid var(--warning-color);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .analyst-info {
+            background-color: #e7f1ff;
+            border-left: 3px solid var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #084298;
+            margin-top: 8px;
+        }
+        
+        /* Modal pour l'escalade */
+        #escalateModal .modal-body {
+            padding: 20px;
+        }
+        
+        #escalateModal textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        /* Styles pour les filtres */
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Message de succès -->
+    <div id="successMessage" class="success-message">
+        <i class="bi bi-check-circle"></i>
+        <span id="successText"></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-check"></i> SOAR Platform - L1
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'alerts:playbook_list' %}">
+                            <i class="bi bi-robot"></i> Mes Playbooks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="bi bi-person-circle"></i> {{ request.user.get_full_name|default:request.user.email }} (L1)
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-main">
+        <!-- Statistiques -->
+        <div class="row">
+            <div class="col-md-6 col-lg-3">
+                <div class="stats-card new">
+                    <div class="stats-label">Nouvelles Alertes</div>
+                    <div class="stats-number">{{ stats.new_count }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stats-card in-progress">
+                    <div class="stats-label">En Cours</div>
+                    <div class="stats-number">{{ stats.in_progress_count }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stats-card resolved">
+                    <div class="stats-label">Résolues</div>
+                    <div class="stats-number">{{ stats.resolved_count }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="stats-card escalated">
+                    <div class="stats-label">Escaladées</div>
+                    <div class="stats-number">{{ stats.escalated_count }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Filtres -->
+        <div class="filter-section">
+            <h5><i class="bi bi-funnel"></i> Filtrer les Alertes</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="timeFilter" class="form-label">Par Temps</label>
+                    <select id="timeFilter" class="form-select" onchange="filterAlerts()">
+                        <option value="all">Toutes les alertes</option>
+                        <option value="1hour">Dernière heure</option>
+                        <option value="24hours">Dernières 24 heures</option>
+                        <option value="7days">Derniers 7 jours</option>
+                        <option value="30days">Derniers 30 jours</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="statusFilter" class="form-label">Par Statut</label>
+                    <select id="statusFilter" class="form-select" onchange="filterAlerts()">
+                        <option value="all">Tous les statuts</option>
+                        <option value="new">Nouvelles</option>
+                        <option value="in_progress">En Cours</option>
+                        <option value="resolved">Résolues</option>
+                        <option value="escalated">Escaladées</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Alertes en Tableau -->
+        <div class="section-title">
+            <i class="bi bi-table"></i> Alertes
+            <a href="{% url 'alerts:create_playbook' %}" class="btn-create-playbook ms-auto">
+                <i class="bi bi-plus-circle"></i> Créer un Playbook
+            </a>
+        </div>
+
+        <!-- Message quand aucune alerte ne correspond aux filtres -->
+        <div id="noResults" class="no-results" style="display: none;">
+            <i class="bi bi-funnel" style="font-size: 3rem; margin-bottom: 15px; color: #6c757d;"></i>
+            <h5>Aucune alerte ne correspond à vos critères de filtrage</h5>
+            <p>Essayez de modifier vos filtres pour voir plus de résultats.</p>
+        </div>
+
+        {% if alerts %}
+            <div class="table-responsive" id="alertsTableContainer">
+                <table class="table" id="alertsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">ID</th>
+                            <th style="width: 20%;">Titre</th>
+                            <th style="width: 25%;">Description</th>
+                            <th style="width: 10%;">Statut</th>
+                            <th style="width: 15%;">Détecté</th>
+                            <th style="width: 25%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                            <tr class="alert-row clickable-row" 
+                                data-status="{{ alert.status|lower }}" 
+                                data-timestamp="{{ alert.detected_at|date:'U' }}"
+                                data-alert-id="{{ alert.id }}"
+                                onclick="showAlertDetails({{ alert.id }})">
+                                <td><strong>#{{ alert.id }}</strong></td>
+                                <td>{{ alert.title }}</td>
+                                <td>
+                                    <small>{{ alert.description|truncatewords:10 }}</small>
+                                    {% if alert.playbook_result %}
+                                        <div class="playbook-result mt-2">
+                                            <i class="bi bi-robot"></i> {{ alert.playbook_result|truncatewords:5 }}
+                                        </div>
+                                    {% endif %}
+                                    {% if alert.escalation_reason %}
+                                        <div class="escalation-reason-box mt-2">
+                                            <i class="bi bi-arrow-up-circle"></i> <strong>Raison:</strong> {{ alert.escalation_reason|truncatewords:5 }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge-status {{ alert.status }}">{{ alert.get_status_display }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ alert.detected_at|date:"d/m/Y H:i" }}</small>
+                                    {% if alert.assigned_to %}
+                                        <div class="analyst-info">
+                                            <i class="bi bi-person"></i> {{ alert.assigned_to.get_full_name|default:alert.assigned_to.email }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.status == "new" and alert.assigned_to == None %}
+                                        <button class="btn-action btn-take" id="takeBtn{{ alert.id }}" onclick="event.stopPropagation(); takeAlert({{ alert.id }})">
+                                            <i class="bi bi-hand-thumbs-up"></i> Prendre
+                                        </button>
+                                    {% elif alert.status == "in_progress" %}
+                                        <button class="btn-action btn-resolve" id="resolveBtn{{ alert.id }}" onclick="event.stopPropagation(); resolveAlert({{ alert.id }})">
+                                            <i class="bi bi-check-circle"></i> Résoudre
+                                        </button>
+                                        <button class="btn-action btn-escalate" onclick="event.stopPropagation(); showEscalateModal({{ alert.id }})">
+                                            <i class="bi bi-arrow-up-circle"></i> Escalader
+                                        </button>
+                                    {% elif alert.status == "escalated" %}
+                                        <div class="text-muted">
+                                            <small>Escaladée au L2</small>
+                                        </div>
+                                    {% else %}
+                                        <small class="text-muted">Aucune action</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Aucune alerte trouvée</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal pour les détails de l'alerte -->
+    <div id="alertModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-info-circle"></i> Détails de l'Alerte</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Le contenu sera rempli dynamiquement par JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour l'escalade -->
+    <div id="escalateModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="bi bi-arrow-up-circle"></i> Escalader l'Alerte</h3>
+                <button class="modal-close" onclick="closeEscalateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="escalationReason" class="form-label">Raison de l'escalade *</label>
+                    <textarea class="form-control" id="escalationReason" rows="4" placeholder="Expliquez pourquoi cette alerte doit être escaladée au L2..."></textarea>
+                    <div class="form-text">Cette information sera visible par l'analyste L2.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="escalationPriority" class="form-label">Priorité</label>
+                    <select class="form-select" id="escalationPriority">
+                        <option value="high">Haute</option>
+                        <option value="medium" selected>Moyenne</option>
+                        <option value="low">Basse</option>
+                    </select>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-action btn-escalate" onclick="confirmEscalation()">
+                        <i class="bi bi-arrow-up-circle"></i> Confirmer l'Escalade
+                    </button>
+                    <button class="btn-action" onclick="closeEscalateModal()" style="background-color: #6c757d; color: white;">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentAlertId = null;
+        
+        // Données pour les détails des alertes
+        const alertDetails = {
+            {% for alert in alerts %}
+                "{{ alert.id }}": {
+                    id: "{{ alert.id }}",
+                    title: "{{ alert.title|escapejs }}",
+                    description: "{{ alert.description|escapejs }}",
+                    status: "{{ alert.status }}",
+                    status_display: "{{ alert.get_status_display|escapejs }}",
+                    detected_at: "{{ alert.detected_at|date:'d/m/Y H:i' }}",
+                    source: "{{ alert.source|default:'Système'|escapejs }}",
+                    severity: "{{ alert.severity|default:'Moyenne'|escapejs }}",
+                    category: "{{ alert.category|default:'Général'|escapejs }}",
+                    assigned_to: {% if alert.assigned_to %}"{{ alert.assigned_to.email|default:'Non assigné'|escapejs }}"{% else %}"Non assigné"{% endif %},
+                    assigned_email: "{{ alert.assigned_to.email|default:''|escapejs }}",
+                    playbook_result: "{{ alert.playbook_result|default:''|escapejs }}",
+                    escalation_reason: "{{ alert.escalation_reason|default:''|escapejs }}",
+                    escalated_at: "{{ alert.escalated_at|date:'d/m/Y H:i'|default:''|escapejs }}",
+                    escalated_by: {% if alert.escalated_by %}"{{ alert.escalated_by.email|default:''|escapejs }}"{% else %}""{% endif %},
+                    resolved_at: "{{ alert.resolved_at|date:'d/m/Y H:i'|default:''|escapejs }}",
+                    timeline: [
+                        {
+                            date: "{{ alert.detected_at|date:'d/m/Y H:i' }}",
+                            event: "Détection initiale"
+                        }{% if alert.assigned_at %},
+                        {
+                            date: "{{ alert.assigned_at|date:'d/m/Y H:i' }}",
+                            event: "Assignée à {{ alert.assigned_to.email|default:'un analyste'|escapejs }}"
+                        }{% endif %}{% if alert.escalated_at %},
+                        {
+                            date: "{{ alert.escalated_at|date:'d/m/Y H:i' }}",
+                            event: "Escaladée au L2 par {{ alert.escalated_by.email|default:'un analyste L1'|escapejs }}"
+                        }{% endif %}{% if alert.resolved_at %},
+                        {
+                            date: "{{ alert.resolved_at|date:'d/m/Y H:i' }}",
+                            event: "Résolue"
+                        }{% endif %}
+                    ]
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function showSuccessMessage(message) {
+            const successEl = document.getElementById('successMessage');
+            const textEl = document.getElementById('successText');
+            
+            textEl.textContent = message;
+            successEl.style.display = 'flex';
+            
+            // Masquer après 3 secondes
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function showAlertDetails(alertId) {
+            const alertData = alertDetails[alertId];
+            if (!alertData) return;
+
+            const modalBody = document.getElementById('modalBody');
+            
+            let actionsHTML = '';
+            if (alertData.status === "new" && alertData.assigned_to === "Non assigné") {
+                actionsHTML = `
+                    <button class="btn-action btn-take" onclick="takeAlert(${alertData.id}); closeModal();">
+                        <i class="bi bi-hand-thumbs-up"></i> Prendre cette alerte
+                    </button>
+                `;
+            } else if (alertData.status === "in_progress") {
+                actionsHTML = `
+                    <button class="btn-action btn-resolve" onclick="resolveAlert(${alertData.id}); closeModal();">
+                        <i class="bi bi-check-circle"></i> Résoudre
+                    </button>
+                    <button class="btn-action btn-escalate" onclick="showEscalateModal(${alertData.id}); closeModal();">
+                        <i class="bi bi-arrow-up-circle"></i> Escalader au L2
+                    </button>
+                `;
+            }
+
+            let escalationSection = '';
+            if (alertData.escalation_reason) {
+                escalationSection = `
+                    <div class="alert-detail-section">
+                        <div class="detail-title">
+                            <i class="bi bi-arrow-up-circle"></i> Informations d'Escalade
+                        </div>
+                        <div class="detail-content">
+                            <p><strong>Raison d'escalade:</strong> ${alertData.escalation_reason}</p>
+                            ${alertData.escalated_at ? `<p><strong>Escaladée le:</strong> ${alertData.escalated_at}</p>` : ''}
+                            ${alertData.escalated_by ? `<p><strong>Escaladée par:</strong> ${alertData.escalated_by}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = `
+                <div class="alert-detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-card-text"></i> Informations Générales
+                    </div>
+                    <div class="detail-content">
+                        <h4 style="color: var(--primary-color); margin-bottom: 15px;">${alertData.title}</h4>
+                        <p style="line-height: 1.6;">${alertData.description}</p>
+                    </div>
+                    
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">ID</span>
+                            <span class="detail-value">#${alertData.id}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Statut</span>
+                            <span class="badge-status ${alertData.status}">${alertData.status_display}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Sévérité</span>
+                            <span class="detail-value">${alertData.severity}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Catégorie</span>
+                            <span class="detail-value">${alertData.category}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Source</span>
+                            <span class="detail-value">${alertData.source}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Détectée le</span>
+                            <span class="detail-value">${alertData.detected_at}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Assignée à</span>
+                            <span class="detail-value">${alertData.assigned_to}</span>
+                        </div>
+                        ${alertData.resolved_at ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Résolue le</span>
+                            <span class="detail-value">${alertData.resolved_at}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                ${alertData.playbook_result ? `
+                <div class="alert-detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-robot"></i> Résultat du Playbook
+                    </div>
+                    <div class="detail-content">
+                        <p>${alertData.playbook_result}</p>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${escalationSection}
+
+                <div class="alert-detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-clock-history"></i> Timeline
+                    </div>
+                    <div class="timeline">
+                        ${alertData.timeline.map(item => `
+                            <div class="timeline-item">
+                                <div class="timeline-date">${item.date}</div>
+                                <div class="timeline-event">${item.event}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${actionsHTML ? `
+                <div class="alert-detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-lightning"></i> Actions Rapides
+                    </div>
+                    <div class="action-buttons">
+                        ${actionsHTML}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('alertModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('alertModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function showEscalateModal(alertId) {
+            currentAlertId = alertId;
+            document.getElementById('escalateModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEscalateModal() {
+            document.getElementById('escalateModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            currentAlertId = null;
+            document.getElementById('escalationReason').value = '';
+            document.getElementById('escalationPriority').value = 'medium';
+        }
+
+        function confirmEscalation() {
+            const reason = document.getElementById('escalationReason').value.trim();
+            const priority = document.getElementById('escalationPriority').value;
+            
+            if (!reason) {
+                showSuccessMessage('Veuillez saisir une raison pour l\'escalade.');
+                return;
+            }
+            
+            if (!currentAlertId) {
+                showSuccessMessage('Erreur: Aucune alerte sélectionnée.');
+                return;
+            }
+            
+            const csrftoken = getCookie('csrftoken');
+            fetch(`/alerts/escalate/${currentAlertId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    reason: reason,
+                    priority: priority
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage('Alerte escaladée au L2 avec succès');
+                    closeEscalateModal();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showSuccessMessage('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showSuccessMessage('Erreur lors de l\'escalade');
+            });
+        }
+
+        // Fermer les modals en cliquant en dehors
+        document.getElementById('alertModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.getElementById('escalateModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEscalateModal();
+            }
+        });
+
+        // Fermer les modals avec la touche Échap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeEscalateModal();
+            }
+        });
+
+        function takeAlert(alertId) {
+            const button = document.getElementById(`takeBtn${alertId}`);
+            const originalText = button.innerHTML;
+            
+            button.classList.add('loading');
+            button.disabled = true;
+
+            fetch(`/alerts/take/${alertId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage('Alerte prise avec succès');
+                    
+                    // Changer l'apparence du bouton temporairement
+                    button.classList.remove('loading');
+                    button.innerHTML = '<i class="bi bi-check-circle"></i> Pris';
+                    button.style.backgroundColor = 'var(--success-color)';
+                    
+                    // Rafraîchir la page après 1.5 secondes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || data.message || 'Erreur inconnue');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('loading');
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showSuccessMessage('Erreur: ' + error.message);
+            });
+        }
+
+        function resolveAlert(alertId) {
+            const button = document.getElementById(`resolveBtn${alertId}`);
+            const originalText = button.innerHTML;
+            
+            button.classList.add('loading');
+            button.disabled = true;
+
+            const csrftoken = getCookie('csrftoken');
+            fetch(`/alerts/resolve/${alertId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage('Alerte résolue avec succès');
+                    
+                    // Changer l'apparence du bouton temporairement
+                    button.classList.remove('loading');
+                    button.innerHTML = '<i class="bi bi-check-circle"></i> Résolu';
+                    button.style.backgroundColor = 'var(--success-color)';
+                    
+                    // Rafraîchir la page après 1.5 secondes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || data.message || 'Erreur inconnue');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('loading');
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showSuccessMessage('Erreur: ' + error.message);
+            });
+        }
+
+        function filterAlerts() {
+            const timeFilter = document.getElementById('timeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('.alert-row');
+            const now = Math.floor(Date.now() / 1000); // timestamp en secondes
+            let visibleRows = 0;
+
+            rows.forEach(row => {
+                let showRow = true;
+
+                // Filtre par statut - utilisation de toLowerCase() pour la comparaison
+                if (statusFilter !== 'all') {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (rowStatus.toLowerCase() !== statusFilter.toLowerCase()) {
+                        showRow = false;
+                    }
+                }
+
+                // Filtre par temps
+                if (timeFilter !== 'all' && showRow) {
+                    const alertTimestamp = parseInt(row.getAttribute('data-timestamp'));
+                    let timeLimit = 0;
+
+                    switch(timeFilter) {
+                        case '1hour':
+                            timeLimit = now - 3600; // 1 heure en secondes
+                            break;
+                        case '24hours':
+                            timeLimit = now - 86400; // 24 heures en secondes
+                            break;
+                        case '7days':
+                            timeLimit = now - 604800; // 7 jours en secondes
+                            break;
+                        case '30days':
+                            timeLimit = now - 2592000; // 30 jours en secondes
+                            break;
+                    }
+
+                    if (alertTimestamp < timeLimit) {
+                        showRow = false;
+                    }
+                }
+
+                if (showRow) {
+                    row.style.display = '';
+                    visibleRows++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Afficher/masquer le message "Aucun résultat"
+            const noResultsDiv = document.getElementById('noResults');
+            const tableContainer = document.getElementById('alertsTableContainer');
+            
+            if (visibleRows === 0 && rows.length > 0) {
+                if (noResultsDiv) noResultsDiv.style.display = 'block';
+                if (tableContainer) tableContainer.style.display = 'none';
+            } else {
+                if (noResultsDiv) noResultsDiv.style.display = 'none';
+                if (tableContainer) tableContainer.style.display = 'block';
+            }
+        }
+
+        // Initialiser les filtres au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Appliquer les filtres initiaux
+            filterAlerts();
+        });
+    </script>
+</body>
+</html>

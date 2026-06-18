@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un Playbook - SOAR Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color ) 0%, #0a58ca 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .container-main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 15px;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-card h2 {
+            margin-bottom: 30px;
+            color: #212529;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #212529;
+        }
+
+        .form-control, .form-select {
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            padding: 10px 15px;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+
+        .json-editor {
+            background-color: #1e1e1e;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #d4d4d4;
+            border: 1px solid #dee2e6;
+            min-height: 300px;
+            overflow-y: auto;
+        }
+
+        .json-editor textarea {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            width: 100%;
+            min-height: 300px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .json-editor textarea:focus {
+            outline: none;
+            border: 1px solid var(--primary-color);
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 8px;
+        }
+
+        .json-example {
+            background-color: #f8f9fa;
+            border-left: 3px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-submit:hover {
+            background-color: #0a58ca;
+            transform: scale(1.02);
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+            transform: scale(1.02);
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #842029;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .info-box {
+            background-color: #cfe2ff;
+            color: #084298;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-check"></i> SOAR Platform
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-main">
+        <div class="form-card">
+            <h2><i class="bi bi-robot"></i> Créer un Nouveau Playbook</h2>
+            
+            {% if error %}
+                <div class="error-message">
+                    <strong><i class="bi bi-exclamation-circle"></i> Erreur :</strong> {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="POST" id="playbookForm">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="name" class="form-label">Nom du Playbook</label>
+                    <input type="text" id="name" name="name" class="form-control" required placeholder="Ex: Défense contre DDoS">
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-control" rows="3" required placeholder="Décrivez le but de ce playbook..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="playbook_type" class="form-label">Type de Playbook</label>
+                    <select id="playbook_type" name="playbook_type" class="form-select" required>
+                        <option value="defense">Défense contre Attaque</option>
+                        <option value="auto_resolve">Résolution Automatique</option>
+                        <option value="investigation">Investigation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="trigger_keywords" class="form-label">Mots-clés Déclencheurs</label>
+                    <input type="text" id="trigger_keywords" name="trigger_keywords" class="form-control" required placeholder="Ex: ddos, brute force, injection sql">
+                    <div class="help-text">Entrez les mots-clés séparés par des virgules qui déclencheront ce playbook</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="actions_json" class="form-label">Actions à Exécuter (Format JSON)</label>
+                    
+                    <div class="info-box">
+                        <strong><i class="bi bi-info-circle"></i> Format JSON</strong>
+                        Entrez les actions sous forme de tableau JSON. Chaque action doit avoir un "step" (numéro) et une "description".
+                    </div>
+
+                    <div class="json-editor">
+                        <textarea id="actions_json" name="actions_json" required placeholder='[
+  {
+    "step": 1,
+    "action": "Bloquer l\'IP source",
+    "description": "Ajouter l\'IP à la liste noire du pare-feu"
+  },
+  {
+    "step": 2,
+    "action": "Isoler le serveur",
+    "description": "Déconnecter le serveur du réseau"
+  },
+  {
+    "step": 3,
+    "action": "Alerter l\'administrateur",
+    "description": "Envoyer une notification à l\'équipe de sécurité"
+  }
+]'>[
+  {
+    "step": 1,
+    "action": "Bloquer l\'IP source",
+    "description": "Ajouter l\'IP à la liste noire du pare-feu"
+  },
+  {
+    "step": 2,
+    "action": "Isoler le serveur",
+    "description": "Déconnecter le serveur du réseau"
+  },
+  {
+    "step": 3,
+    "action": "Alerter l\'administrateur",
+    "description": "Envoyer une notification à l\'équipe de sécurité"
+  }
+]</textarea>
+                    </div>
+
+                    <div class="json-example">
+                        <strong>Exemple de format JSON :</strong>  
+
+                        <code>[
+  { "step": 1, "action": "Action 1", "description": "Description détaillée" },
+  { "step": 2, "action": "Action 2", "description": "Description détaillée" }
+]</code>
+                    </div>
+
+                    <div class="help-text" style="margin-top: 15px;">
+                        <i class="bi bi-lightbulb"></i> Utilisez un validateur JSON en ligne pour vérifier votre syntaxe avant de soumettre.
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-check-circle"></i> Créer le Playbook
+                    </button>
+                    <a href="{% url 'alerts:l1_dashboard' %}" class="btn-cancel" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Valider le JSON avant de soumettre le formulaire
+        document.getElementById('playbookForm' ).addEventListener('submit', function(e) {
+            const jsonInput = document.getElementById('actions_json').value;
+            try {
+                JSON.parse(jsonInput);
+            } catch (error) {
+                e.preventDefault();
+                alert('Erreur JSON : ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Playbooks - SOAR Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6610f2;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0bb5e0 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .container-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 30px 0 20px 0;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .playbook-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .playbook-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateX(2px);
+        }
+
+        .playbook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .playbook-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .badge-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            background-color: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .playbook-description {
+            color: #495057;
+            margin: 10px 0;
+            font-size: 0.95rem;
+        }
+
+        .playbook-keywords {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .playbook-keywords strong {
+            color: #212529;
+        }
+
+        .playbook-actions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .playbook-actions strong {
+            color: #212529;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .action-item {
+            background-color: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .action-step {
+            background-color: var(--primary-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .action-content {
+            display: inline-block;
+        }
+
+        .action-title {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .action-description {
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-top: 3px;
+        }
+
+        .btn-delete {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        .btn-create {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-create:hover {
+            background-color: #0a58ca;
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <!-- Logo avec lien dynamique -->
+            {% if request.user.role == 'L1' %}
+                <a class="navbar-brand" href="{% url 'alerts:l1_dashboard' %}">
+            {% else %}
+                <a class="navbar-brand" href="{% url 'alerts:l2_dashboard' %}">
+            {% endif %}
+                <i class="bi bi-shield-check"></i> SOAR Platform - 
+                {% if request.user.role == 'L1' %}L1{% else %}L2{% endif %}
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <!-- LIEN DYNAMIQUE SELON LE RÔLE -->
+                        {% if request.user.role == 'L1' %}
+                            <a class="nav-link" href="{% url 'alerts:l1_dashboard' %}">
+                                <i class="bi bi-table"></i> Tableau de Bord 
+                            </a>
+                        {% else %}
+                            <a class="nav-link" href="{% url 'alerts:l2_dashboard' %}">
+                                <i class="bi bi-table"></i> Tableau de Bord 
+                            </a>
+                        {% endif %}
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="bi bi-person-circle"></i> 
+                            {{ request.user.email }} 
+                            ({% if request.user.role == 'L1' %}L1{% else %}L2{% endif %})
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-main">
+        <div class="section-title">
+            <i class="bi bi-robot"></i> Mes Playbooks de Défense
+            <a href="{% url 'alerts:create_playbook' %}" class="btn-create ms-auto">
+                <i class="bi bi-plus-circle"></i> Créer un Playbook
+            </a>
+        </div>
+
+        {% if playbooks %}
+            {% for playbook in playbooks %}
+                <div class="playbook-card">
+                    <div class="playbook-header">
+                        <div>
+                            <div class="playbook-title">{{ playbook.name }}</div>
+                            <span class="badge-type">{{ playbook.get_playbook_type_display }}</span>
+                        </div>
+                        <button class="btn-delete" onclick="deletePlaybook({{ playbook.id }})">
+                            <i class="bi bi-trash"></i> Supprimer
+                        </button>
+                    </div>
+
+                    <div class="playbook-description">{{ playbook.description }}</div>
+
+                    <div class="playbook-keywords">
+                        <strong><i class="bi bi-lightning"></i> Mots-clés Déclencheurs :</strong>  
+                        {{ playbook.trigger_keywords }}
+                    </div>
+
+                    <div class="playbook-actions">
+                        <strong><i class="bi bi-gear"></i> Actions à Exécuter :</strong>
+                        {% for action in playbook.actions %}
+                            <div class="action-item">
+                                <span class="action-step">{{ action.step }}</span>
+                                <div class="action-content">
+                                    <div class="action-title">{{ action.action }}</div>
+                                    <div class="action-description">{{ action.description }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> Créé le {{ playbook.created_at|date:"d/m/Y H:i" }}
+                    </small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Aucun playbook créé pour le moment</p>
+                <a href="{% url 'alerts:create_playbook' %}" class="btn-create">
+                    <i class="bi bi-plus-circle"></i> Créer votre premier Playbook
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function deletePlaybook(playbookId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce playbook ?')) {
+                const csrftoken = getCookie('csrftoken');
+                fetch(`/alerts/playbooks/delete/${playbookId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Playbook supprimé');
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        
+        // Debug: afficher le rôle dans la console
+        console.log("Rôle utilisateur:", "{{ request.user.role }}");
+    </script>
+</body>
+</html>

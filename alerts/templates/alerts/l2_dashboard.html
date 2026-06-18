@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord L2 - SOAR Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6610f2;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #0dcaf0;
+            --dark-bg: #f8f9fa;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0bb5e0 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stats-card.escalated { border-left-color: var(--danger-color); }
+        .stats-card.investigation { border-left-color: var(--warning-color); }
+        .stats-card.resolved { border-left-color: var(--success-color); }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 30px 0 20px 0;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-responsive {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .table thead {
+            background-color: var(--dark-bg);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table tbody tr {
+            cursor: pointer;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-status.escalated { background-color: #f8d7da; color: #842029; }
+        .badge-status.under_investigation { background-color: #fff3cd; color: #664d03; }
+        .badge-status.resolved { background-color: #d1e7dd; color: #0f5132; }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            white-space: nowrap;
+            margin: 2px;
+        }
+
+        .btn-resolve {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-resolve:hover {
+            background-color: #157347;
+        }
+
+        .btn-take {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-take:hover {
+            background-color: #0bb5e0;
+        }
+
+        .btn-details {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        .btn-details:hover {
+            background-color: #0bb5e0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .escalation-reason-box {
+            background-color: #fff3cd;
+            border-left: 3px solid var(--warning-color);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .priority-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .priority-high { background-color: #dc3545; }
+        .priority-medium { background-color: #fd7e14; }
+        .priority-low { background-color: #198754; }
+        .priority-critical { background-color: #8b0000; }
+
+        .escalated-badge {
+            background-color: #f8d7da;
+            color: #842029;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+        }
+
+        /* Loader pour les boutons */
+        .btn-action.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-action.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-top: -8px;
+            margin-left: -8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Message de succès temporaire */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #520dc2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-section:last-child {
+            border-bottom: none;
+        }
+
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Message de succès -->
+    <div id="successMessage" class="success-message">
+        <i class="bi bi-check-circle"></i>
+        <span id="successText"></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-check"></i> SOAR Platform - L2
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'alerts:playbook_list' %}">
+                            <i class="bi bi-robot"></i> Mes Playbooks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <span class="nav-link">
+                            <i class="bi bi-person-circle"></i> {{ request.user.email }} (L2)
+                        </span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:logout' %}">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-main">
+        <!-- Statistiques L2 -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stats-card escalated">
+                    <div class="stats-label">Escaladées</div>
+                    <div class="stats-number">{{ stats.escalated_count }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card investigation">
+                    <div class="stats-label">En Investigation</div>
+                    <div class="stats-number">{{ stats.investigation_count }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card resolved">
+                    <div class="stats-label">Résolues</div>
+                    <div class="stats-number">{{ stats.resolved_count }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Alertes Escaladées -->
+        <div class="section-title">
+            <i class="bi bi-arrow-up-circle"></i> Alertes Escaladées (L2)
+            <span class="badge-status escalated ms-2">{{ alerts|length }} alertes</span>
+        </div>
+
+        {% if alerts %}
+            <div class="table-responsive">
+                <table class="table" id="alertsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Titre</th>
+                            <th>Description</th>
+                            <th>Priorité</th>
+                            <th>Statut</th>
+                            <th>Escaladée</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                            <tr class="alert-row" onclick="showAlertDetails({{ alert.id }})">
+                                <td><strong>#{{ alert.id }}</strong></td>
+                                <td>
+                                    {{ alert.title }}
+                                    <div class="escalated-badge">
+                                        <i class="bi bi-arrow-up"></i> L1
+                                    </div>
+                                </td>
+                                <td>
+                                    <small>{{ alert.description|truncatewords:8 }}</small>
+                                    {% if alert.escalation_reason %}
+                                        <div class="escalation-reason-box mt-2">
+                                            <i class="bi bi-chat-left-text"></i> {{ alert.escalation_reason|truncatewords:5 }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.severity == "critical" %}
+                                        <span class="priority-indicator priority-critical"></span> Critique
+                                    {% elif alert.severity == "high" %}
+                                        <span class="priority-indicator priority-high"></span> Haute
+                                    {% elif alert.severity == "medium" %}
+                                        <span class="priority-indicator priority-medium"></span> Moyenne
+                                    {% else %}
+                                        <span class="priority-indicator priority-low"></span> Basse
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge-status {{ alert.status }}">
+                                        {% if alert.status == "escalated" %}
+                                            Escaladée
+                                        {% elif alert.status == "under_investigation" %}
+                                            En Investigation
+                                        {% else %}
+                                            {{ alert.status }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if alert.escalated_at %}
+                                        <small>{{ alert.escalated_at|date:"d/m/Y H:i" }}</small>
+                                    {% else %}
+                                        <small>{{ alert.detected_at|date:"d/m/Y H:i" }}</small>
+                                    {% endif %}
+                                </td>
+                                <td onclick="event.stopPropagation();">
+                                    {% if alert.status == "escalated" %}
+                                        <button class="btn-action btn-take" id="takeBtn{{ alert.id }}" onclick="takeAlertL2({{ alert.id }})">
+                                            <i class="bi bi-hand-thumbs-up"></i> Prendre
+                                        </button>
+                                        <button class="btn-action btn-details" onclick="event.stopPropagation(); showAlertDetails({{ alert.id }})">
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+                                    {% elif alert.status == "under_investigation" %}
+                                        <button class="btn-action btn-resolve" id="resolveBtn{{ alert.id }}" onclick="resolveAlertL2({{ alert.id }})">
+                                            <i class="bi bi-check-circle"></i> Résoudre
+                                        </button>
+                                        <button class="btn-action btn-details" onclick="event.stopPropagation(); showAlertDetails({{ alert.id }})">
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+                                    {% else %}
+                                        <button class="btn-action btn-details" onclick="event.stopPropagation(); showAlertDetails({{ alert.id }})">
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-check-circle"></i>
+                <p>Aucune alerte escaladée pour le moment</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal pour les détails -->
+    <div id="alertModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="bi bi-info-circle"></i> Détails de l'Alerte</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenu rempli dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Données des alertes
+        const alertDetails = {
+            {% for alert in alerts %}
+                {{ alert.id }}: {
+                    id: {{ alert.id }},
+                    title: "{{ alert.title|escapejs }}",
+                    description: "{{ alert.description|escapejs }}",
+                    status: "{{ alert.status }}",
+                    severity: "{{ alert.severity }}",
+                    detected_at: "{{ alert.detected_at|date:'d/m/Y H:i' }}",
+                    escalated_at: "{% if alert.escalated_at %}{{ alert.escalated_at|date:'d/m/Y H:i' }}{% else %}Non escaladée{% endif %}",
+                    escalated_by: "{% if alert.escalated_by %}{{ alert.escalated_by.email|escapejs }}{% else %}Inconnu{% endif %}",
+                    escalation_reason: "{{ alert.escalation_reason|default:'Non spécifié'|escapejs }}",
+                    assigned_to: "{% if alert.assigned_to %}{{ alert.assigned_to.email|escapejs }}{% else %}Non assignée{% endif %}",
+                    assigned_at: "{% if alert.assigned_at %}{{ alert.assigned_at|date:'d/m/Y H:i' }}{% else %}Non assignée{% endif %}",
+                    resolved_at: "{% if alert.resolved_at %}{{ alert.resolved_at|date:'d/m/Y H:i' }}{% else %}Non résolue{% endif %}",
+                    playbook_result: "{{ alert.playbook_result|default:'Aucun résultat'|escapejs }}",
+                    source: "Snort IDS",
+                    source_ip: "{{ alert.source_ip|default:'N/A'|escapejs }}",
+                    dest_ip: "{{ alert.dest_ip|default:'N/A'|escapejs }}"
+                },
+            {% endfor %}
+        };
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function showSuccessMessage(message) {
+            const successEl = document.getElementById('successMessage');
+            const textEl = document.getElementById('successText');
+            
+            textEl.textContent = message;
+            successEl.style.display = 'flex';
+            
+            // Masquer après 3 secondes
+            setTimeout(() => {
+                successEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function showAlertDetails(alertId) {
+            const alertData = alertDetails[alertId];
+            if (!alertData) return;
+
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = `
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-card-text"></i> Informations Générales
+                    </div>
+                    <div class="detail-content">
+                        <h4>${alertData.title}</h4>
+                        <p>${alertData.description}</p>
+                        
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">ID</span>
+                                <span class="detail-value">#${alertData.id}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Statut</span>
+                                <span class="badge-status ${alertData.status}">
+                                    ${alertData.status === 'escalated' ? 'Escaladée' : 
+                                      alertData.status === 'under_investigation' ? 'En Investigation' : 
+                                      alertData.status}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Priorité</span>
+                                <span class="detail-value">
+                                    ${alertData.severity === 'critical' ? 'Critique' : 
+                                     alertData.severity === 'high' ? 'Haute' : 
+                                     alertData.severity === 'medium' ? 'Moyenne' : 'Basse'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-calendar"></i> Dates
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Détectée le</span>
+                                <span class="detail-value">${alertData.detected_at}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Escaladée le</span>
+                                <span class="detail-value">${alertData.escalated_at}</span>
+                            </div>
+                            ${alertData.assigned_at !== 'Non assignée' ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Assignée le</span>
+                                <span class="detail-value">${alertData.assigned_at}</span>
+                            </div>
+                            ` : ''}
+                            ${alertData.resolved_at !== 'Non résolue' ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Résolue le</span>
+                                <span class="detail-value">${alertData.resolved_at}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-person"></i> Assignation
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Assignée à</span>
+                                <span class="detail-value">${alertData.assigned_to}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Escaladée par</span>
+                                <span class="detail-value">${alertData.escalated_by}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${alertData.escalation_reason && alertData.escalation_reason !== 'Non spécifié' ? `
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-arrow-up-circle"></i> Raison de l'Escalade
+                    </div>
+                    <div class="detail-content">
+                        <p>${alertData.escalation_reason}</p>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${alertData.playbook_result && alertData.playbook_result !== 'Aucun résultat' ? `
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-robot"></i> Résultat Playbook L1
+                    </div>
+                    <div class="detail-content">
+                        <p>${alertData.playbook_result}</p>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="bi bi-geo-alt"></i> Informations Réseau
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">IP Source</span>
+                                <span class="detail-value">${alertData.source_ip}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">IP Destination</span>
+                                <span class="detail-value">${alertData.dest_ip}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Source</span>
+                                <span class="detail-value">${alertData.source}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    ${alertData.status === 'escalated' ? `
+                    <button class="btn-action btn-take" onclick="takeAlertL2(${alertData.id}); closeModal();">
+                        <i class="bi bi-hand-thumbs-up"></i> Prendre en charge
+                    </button>
+                    ` : ''}
+                    ${alertData.status === 'under_investigation' ? `
+                    <button class="btn-action btn-resolve" onclick="resolveAlertL2(${alertData.id}); closeModal();">
+                        <i class="bi bi-check-circle"></i> Résoudre
+                    </button>
+                    ` : ''}
+                    <button class="btn-action btn-details" onclick="closeModal()">
+                        <i class="bi bi-x-circle"></i> Fermer
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('alertModal').style.display = 'none';
+        }
+
+        document.getElementById('alertModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        function takeAlertL2(alertId) {
+            const button = document.getElementById(`takeBtn${alertId}`);
+            const originalText = button.innerHTML;
+            
+            button.classList.add('loading');
+            button.disabled = true;
+
+            fetch(`/alerts/take/${alertId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage('Alerte prise en charge avec succès');
+                    
+                    // Changer l'apparence du bouton temporairement
+                    button.classList.remove('loading');
+                    button.innerHTML = '<i class="bi bi-check-circle"></i> Pris';
+                    button.style.backgroundColor = 'var(--success-color)';
+                    
+                    // Rafraîchir la page après 1.5 secondes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || data.message || 'Erreur inconnue');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('loading');
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showSuccessMessage('Erreur: ' + error.message);
+            });
+        }
+
+        function resolveAlertL2(alertId) {
+            const button = document.getElementById(`resolveBtn${alertId}`);
+            const originalText = button.innerHTML;
+            
+            button.classList.add('loading');
+            button.disabled = true;
+
+            fetch(`/alerts/resolve-l2/${alertId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showSuccessMessage('Alerte résolue avec succès');
+                    
+                    // Changer l'apparence du bouton temporairement
+                    button.classList.remove('loading');
+                    button.innerHTML = '<i class="bi bi-check-circle"></i> Résolu';
+                    button.style.backgroundColor = 'var(--success-color)';
+                    
+                    // Rafraîchir la page après 1.5 secondes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(data.error || data.message || 'Erreur inconnue');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.classList.remove('loading');
+                button.disabled = false;
+                button.innerHTML = originalText;
+                showSuccessMessage('Erreur: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>
